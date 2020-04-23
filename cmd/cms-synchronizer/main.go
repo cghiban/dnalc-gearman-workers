@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"gearmanworkers/cmssynchronizer"
 
@@ -18,6 +19,10 @@ var dbh *sql.DB
 
 func init() {
 
+	if "" == os.Getenv("GEARMAN_SERVERS") {
+		log.Fatalln("GEARMAN_SERVERS not set")
+	}
+
 	dbUser := os.Getenv("DB_USER")
 	if dbUser == "" {
 		dbUser = os.Getenv("USER")
@@ -26,6 +31,9 @@ func init() {
 	dbPass := os.Getenv("DB_PASS")
 
 	dbName := os.Getenv("DB_DATABASE")
+	if "" == dbName {
+		log.Fatalln("DB_DATABASE not set")
+	}
 
 	dbHost := os.Getenv("DB_HOST")
 	if dbHost == "" {
@@ -56,7 +64,7 @@ func main() {
 	w := worker.New(worker.OneByOne)
 	defer w.Close()
 
-	atomGetter := cmssynchronizer.Atoms{DB: dbh}
+	/*atomGetter := cmssynchronizer.Atoms{DB: dbh}
 	atom, err := atomGetter.GetByID(17136)
 	if err != nil {
 		panic(err.Error())
@@ -69,8 +77,7 @@ func main() {
 		fmt.Println(" Path: ", *ad.Path)
 		fmt.Println("")
 	}
-
-	os.Exit(0)
+	*/
 
 	w.ErrorHandler = func(e error) {
 		log.Println(e)
@@ -91,13 +98,15 @@ func main() {
 		log.Printf("Data=%s\n", job.Data())
 		return nil
 	}
-	w.AddServer("tcp4", "143.48.220.52:4730")
+	gServers := strings.Split(os.Getenv("GEARMAN_SERVERS"), ",")
+	for _, srv := range gServers {
+		log.Printf("++ adding gearman server %s\n", srv)
+		w.AddServer("tcp4", srv)
+	}
 
-	//w.AddFunc("CMSSynchronize", cmssynchronizer.Synchronize, 30)
-	w.AddFunc("Ping", cmssynchronizer.Ping, 30)
-	//w.AddFunc("sum", Sum, 5)
-	//w.AddFunc("SysInfo", worker.SysInfo, worker.Unlimited)
-	//w.AddFunc("MemInfo", worker.MemInfo, worker.Unlimited)
+	w.AddFunc("SynchAtomFiles", cmssynchronizer.SynchAtomFiles, 10)
+	w.AddFunc("FixAtomPems", cmssynchronizer.FixAtomPems, 10)
+	//w.AddFunc("Ping", cmssynchronizer.Ping, 30)
 
 	if err := w.Ready(); err != nil {
 		log.Fatal(err)

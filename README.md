@@ -7,7 +7,7 @@ export DB_DATABASE=...
 export DB_HOST=...
 export DB_USER=...
 export DB_PASS=...
-export GEARMAN_SERVERS=server1,server2 # comma separated
+export GEARMAN_SERVERS=server1:port,server2:4730 # comma separated, no spaces
 ```
 
 ## svnupdater
@@ -38,6 +38,9 @@ live site (or updates them)
   * `chmod -Rh a+r` for the files
   * `chmod -Rh a+rx` for the directories
   * `chcon -R -t httpd_sys_rw_content_t` for the atom's directory
+
+_Note_: `chcon` can be implemented using https://github.com/sndnvaps/selinux. I don't think we
+really need it.
 
 This worker will be running on the _content_ server as the _biomedia_ user
 

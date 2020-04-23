@@ -76,9 +76,9 @@ func (a *Atoms) GetByID(atomID int32) (Atom, error) {
 	atom.ID = &atomIDStr
 	*atom.Name = strings.TrimSpace(*atom.Name)
 
-	atomDownloads := getAtomDownloads(dbh, atomID)
-	fmt.Printf("downloads for [%s]: %v\n", atomID, atomDownloads)
-	atom.Downloads = atomDownloads
+	//atomDownloads := getAtomDownloads(dbh, atomID)
+	//fmt.Printf("downloads for [%s]: %v\n", atomID, atomDownloads)
+	atom.Downloads = getAtomDownloads(dbh, atomID)
 
 	return atom, nil
 }
