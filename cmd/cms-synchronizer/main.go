@@ -2,7 +2,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -15,69 +14,22 @@ import (
 	"github.com/mikespook/golib/signal"
 )
 
-var dbh *sql.DB
-
 func init() {
+
+	if "" == os.Getenv("CONTENT_HTDOCS") {
+		log.Fatalln("CONTENT_HTDOCS not set")
+	}
 
 	if "" == os.Getenv("GEARMAN_SERVERS") {
 		log.Fatalln("GEARMAN_SERVERS not set")
 	}
-
-	dbUser := os.Getenv("DB_USER")
-	if dbUser == "" {
-		dbUser = os.Getenv("USER")
-	}
-
-	dbPass := os.Getenv("DB_PASS")
-
-	dbName := os.Getenv("DB_DATABASE")
-	if "" == dbName {
-		log.Fatalln("DB_DATABASE not set")
-	}
-
-	dbHost := os.Getenv("DB_HOST")
-	if dbHost == "" {
-		dbHost = "localhost"
-	}
-
-	// default collation is 'utf8mb4_general_ci'
-	db, err := sql.Open("mysql", dbUser+":"+dbPass+"@tcp("+dbHost+")/"+dbName)
-	if err != nil {
-		fmt.Println(dbUser + ":XXX" + "@tcp(" + dbHost + ")/" + dbName)
-		panic(err.Error())
-	}
-
-	// Open doesn't open a connection, so let's Ping() our db
-	err = db.Ping()
-	if err != nil {
-		fmt.Println(dbUser + ":XXX" + "@tcp(" + dbHost + ")/" + dbName)
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
-
-	dbh = db
 }
 
 func main() {
 
-	defer dbh.Close()
 	defer log.Println("Shutdown complete!")
 	w := worker.New(worker.OneByOne)
 	defer w.Close()
-
-	/*atomGetter := cmssynchronizer.Atoms{DB: dbh}
-	atom, err := atomGetter.GetByID(17136)
-	if err != nil {
-		panic(err.Error())
-	}
-	//fmt.Printf("atom = %+v\n", atom)
-	fmt.Printf("[%s] %s\n", *atom.ID, *atom.Name)
-	for _, ad := range atom.Downloads {
-		fmt.Println(" Type: ", *ad.Type)
-		fmt.Println(" Label:", *ad.Label)
-		fmt.Println(" Path: ", *ad.Path)
-		fmt.Println("")
-	}
-	*/
 
 	w.ErrorHandler = func(e error) {
 		log.Println(e)
@@ -104,7 +56,7 @@ func main() {
 		w.AddServer("tcp4", srv)
 	}
 
-	w.AddFunc("SynchAtomFiles", cmssynchronizer.SynchAtomFiles, 10)
+	w.AddFunc("SynchAtomFiles", cmssynchronizer.SynchAtomFiles, 15)
 	w.AddFunc("FixAtomPems", cmssynchronizer.FixAtomPems, 10)
 	//w.AddFunc("Ping", cmssynchronizer.Ping, 30)
 

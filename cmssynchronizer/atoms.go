@@ -36,7 +36,7 @@ type Atoms struct {
 const sqlSingleAtomQueryTmpl = `SELECT at_name, at_type, at_public FROM atoms WHERE at_id = ?`
 const sqlAtomDownloadsQueryTmpl = `SELECT path, label, type FROM atom_downloads where atom_id = ?`
 
-func getAtomDownloads(dbh *sql.DB, id int32) []AtomDownload {
+func getAtomDownloads(dbh *sql.DB, id int) []AtomDownload {
 
 	sth, err := dbh.Query(sqlAtomDownloadsQueryTmpl, id)
 	if err != nil {
@@ -59,7 +59,7 @@ func getAtomDownloads(dbh *sql.DB, id int32) []AtomDownload {
 	return downloads
 }
 
-func (a *Atoms) GetByID(atomID int32) (Atom, error) {
+func (a *Atoms) GetByID(atomID int) (Atom, error) {
 
 	dbh := a.DB
 
