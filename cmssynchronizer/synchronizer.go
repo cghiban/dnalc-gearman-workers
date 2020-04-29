@@ -62,36 +62,38 @@ func FixAtomPems(job worker.Job) ([]byte, error) {
 
 	out := ""
 	// lets do the walk
-	err = filepath.Walk(atomDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(atomDir, func(filepath string, info os.FileInfo, err error) error {
 		if err != nil {
-			out += fmt.Sprintf("unable to fix [%s]\n", path)
-			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
+			out += fmt.Sprintf("unable to fix [%s]\n", filepath)
+			fmt.Printf("prevent panic by handling failure accessing a path %q: %v\n", filepath, err)
 			return err
 		}
+		filebasepath := path.Base(filepath)
 		if info.IsDir() {
 			//fmt.Printf("visited dir: %q\n", path)
-			if err := os.Chmod(path, 0755); err != nil {
-				out += fmt.Sprintf("  unable to dir fix [%s]\n", path)
+			if err := os.Chmod(filepath, 0755); err != nil {
+				out += fmt.Sprintf("  unable to dir fix [%s]\n", filepath)
 			} else {
-				out += fmt.Sprintf("  fixed dir [%s]\n", path)
+				out += fmt.Sprintf("  fixed dir [%s]\n", filebasepath)
 			}
 		} else if info.Mode().IsRegular() {
 			//fmt.Printf("visited regular file: %q\n", path)
 			//fmt.Printf("  pems: %q\n", info.Mode().Perm())
-			if err := os.Chmod(path, 0644); err != nil {
-				log.Printf("chmod(%s) = %+v\n", path, err.Error())
-				out += fmt.Sprintf("  unable to fix file [%s]\n", path)
+			if err := os.Chmod(filepath, 0644); err != nil {
+				log.Printf("chmod(%s) = %+v\n", filepath, err.Error())
+				out += fmt.Sprintf("  unable to fix file [%s]\n", filepath)
 			} else {
-				out += fmt.Sprintf("  fixed file [%s]\n", path)
+				out += fmt.Sprintf("  fixed file [%s]\n", filebasepath)
 			}
 
 		} else {
-			fmt.Printf("visited other type of file: %q\n", path)
+			fmt.Printf("visited other type of file: %q\n", filepath)
 			//fmt.Printf("  pems: %q\n", info.Mode().Perm())
-			out += fmt.Sprintf("  not fixing [%s]\n", path)
+			out += fmt.Sprintf("  not fixing [%s]\n", filebasepath)
 		}
 		return nil
-	})
+	}) // end of Walk
+
 	if err != nil {
 		fmt.Printf("error walking the path %q: %v\n", atomDir, err)
 		out += fmt.Sprintf(" error fixing in [%s]: %s\n", atomDir, err.Error())
@@ -188,7 +190,7 @@ func SynchAtomFiles(job worker.Job) ([]byte, error) {
 			defer resp.Body.Close()
 
 			fullAtomPath := filepath.Join(atomDir, path.Base(*ad.Path))
-			out += fullAtomPath + "\n"
+			out += path.Base(*ad.Path) + "\n"
 
 			// Create the file
 			fh, err := os.Create(fullAtomPath)
@@ -200,9 +202,9 @@ func SynchAtomFiles(job worker.Job) ([]byte, error) {
 			// Write the body to file
 			_, err = io.Copy(fh, resp.Body)
 			if err != nil {
-				out += "Error: " + err.Error() + "\n"
+				out += "  - error: " + err.Error() + "!\n\n"
 			} else {
-				out += "Saved file to " + fullAtomPath
+				out += "  - file saved successfully!\n\n"
 			}
 		}
 	}
