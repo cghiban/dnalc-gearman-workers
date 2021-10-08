@@ -1,0 +1,8 @@
+export DB_DATABASE=..
+export DB_HOST=....
+export DB_USER=cornel
+export DB_PASS=xxx
+export GEARMAN_SERVERS=.....:4730
+export CONTENT_HTDOCS=testdata
+export GEARMAN_SERVERS=....:4730
+
